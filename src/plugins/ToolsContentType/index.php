@@ -186,11 +186,25 @@ if (!class_exists('LinkOrganizer')) {
       LinkOrganizer::setup_meta_boxes();
       LinkOrganizer::setup_templates();
     }
+
+    public static function activate() {
+      // One of the most common uses for an activation hook is to refresh WordPress permalinks 
+      // when a plugin registers a custom post type. This gets rid of the nasty 404 errors.
+      LinkOrganizer::setup_post_type();
+      flush_rewrite_rules(); 
+    }
+
+    public static function deactivate() {
+      unregister_post_type( 'tools' );
+      flush_rewrite_rules();
+    }
   }
 
   
   
   add_action( 'init', array('LinkOrganizer','init'), 0 );
+  register_activation_hook( __FILE__, array('LinkOrganizer','activate'));
+  register_deactivation_hook( __FILE__, array('LinkOrganizer','deactivate') );
 }
 
    
