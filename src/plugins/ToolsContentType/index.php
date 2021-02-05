@@ -1,19 +1,19 @@
 <?php
 /*
-  Plugin Name: ToolsWPContentType
+  Plugin Name: Link Organizer
   Plugin URI: http://github.com/crossan007/ToolsWPContentType
-  Description: ToolsWPContentType
+  Description: Provides a content type for cleanly storing links to various resources with searchable taxonomy and room for your own notes. Stop leaving 100's of tabs open, and save the link here instead
   Author: Charles Crossan
-  Version: 0.0.01
+  Version: 0.0.1
   Author URI: http://crossan007.dev
 */
 
 
-if (!class_exists('CCrossan_ToolsWPContentType')) {
+if (!class_exists('LinkOrganizer')) {
   // WordPress class-based model Resources: https://carlalexander.ca/static-keyword-wordpress/
   // https://developer.wordpress.org/plugins/plugin-basics/best-practices/#object-oriented-programming-method
 
-  class CCrossan_ToolsWPContentType {
+  class LinkOrganizer {
     public static function setup_meta_boxes(){
       // found this here: https://stackoverflow.com/a/61209067
       add_action( 'add_meta_boxes_tools', 'meta_box_for_tools' );
@@ -181,16 +181,16 @@ if (!class_exists('CCrossan_ToolsWPContentType')) {
     }
 
     public static function init() {
-      CCrossan_ToolsWPContentType::setup_taxonomies();
-      CCrossan_ToolsWPContentType::setup_post_type();
-      CCrossan_ToolsWPContentType::setup_meta_boxes();
-      CCrossan_ToolsWPContentType::setup_templates();
+      LinkOrganizer::setup_taxonomies();
+      LinkOrganizer::setup_post_type();
+      LinkOrganizer::setup_meta_boxes();
+      LinkOrganizer::setup_templates();
     }
   }
 
   
   
-  add_action( 'init', array('CCrossan_ToolsWPContentType','init'), 0 );
+  add_action( 'init', array('LinkOrganizer','init'), 0 );
 }
 
    
