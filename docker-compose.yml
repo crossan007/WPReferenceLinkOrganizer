@@ -33,4 +33,4 @@ services:
         WORDPRESS_DB_NAME: wordpress_db
       volumes:
         - "./tmp/wordpress:/var/www/html"
-        - "./src/plugins/ToolsContentType:/var/www/html/wp-content/plugins/ToolsContentType"
+        - "./src/plugins/ReferenceLinkOrganizer:/var/www/html/wp-content/plugins/ReferenceLinkOrganizer"
