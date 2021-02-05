@@ -36,69 +36,66 @@ if (!class_exists('ReferenceLinkOrganizer')) {
       );
     }
 
-    public static function setup_meta_boxes(){
       // found this here: https://stackoverflow.com/a/61209067
-      add_action( 'add_meta_boxes_'.self::get_plugin_base_name(), 'meta_box_for_tools' );
-      function meta_box_for_tools( $post ){
-          add_meta_box(
-            'my_meta_box_custom_id', 
-            _( 'Additional info', 'textdomain' ), 
-            'my_custom_meta_box_html_output', 
-            ReferenceLinkOrganizer::get_plugin_base_name(), 
-            'side', 
-            'high' );
-      }
       
-      function my_custom_meta_box_html_output( $post ) {
-        wp_nonce_field( basename( __FILE__ ), 'my_custom_meta_box_nonce' ); //used later for security
-        echo '<p><input type="checkbox" name="is_this_featured" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('Featured a Product?', 'textdomain').'</label></p>';
-
-        echo '<p><input type="text" name="tool_url" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('URL', 'textdomain').'</label></p>';
-
-        echo '<p>'. 
-          '<input type="radio" id="locatability_1" name="locatability" value="1" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
-          '<label for="locatability_1">'.__('Front Page of Google', 'textdomain').'</label><br/>'.
-          '<input type="radio" id="locatability_2" name="locatability" value="2" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
-          '<label for="locatability_1">'.__('Second Page of Google', 'textdomain').'</label><br/>'.
-          '<input type="radio" id="locatability_3" name="locatability" value="3" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
-          '<label for="locatability_1"><a target="_blank" href="https://xkcd.com/979/">'.__('Denver Coder 99s Home Address', 'textdomain').'</a></label>'.
-          '</p>';
-
-
-      }
-      
-      add_action( 'save_post_'.self::get_plugin_base_name(), 'tools_save_meta_boxes_data', 10, 2 );
-      function tools_save_meta_boxes_data( $post_id ){
-          // check for nonce to top xss
-          if ( !isset( $_POST['my_custom_meta_box_nonce'] ) || !wp_verify_nonce( $_POST['my_custom_meta_box_nonce'], basename( __FILE__ ) ) ){
-              return;
-          }
-      
-          // check for correct user capabilities - stop internal xss from customers
-          if ( ! current_user_can( 'edit_post', $post_id ) ){
-              return;
-          }
-      
-          // update fields
-          if ( isset( $_REQUEST['is_this_featured'] ) ) {
-              update_post_meta( $post_id, 'is_this_featured', sanitize_text_field( $_POST['is_this_featured'] ) );
-          }
-
-          if ( isset( $_REQUEST['tool_url'] ) ) {
-            update_post_meta( $post_id, 'tool_url', sanitize_text_field( $_POST['tool_url'] ) );
-          }
-
-          if ( isset( $_REQUEST['locatability'] ) ) {
-            update_post_meta( $post_id, 'locatability', sanitize_text_field( $_POST['locatability'] ) );
-  
-          }
-
-      }
+    public static function meta_box_for_tools( $post ){
+      add_meta_box(
+        'my_meta_box_custom_id', 
+        _( 'Additional info', 'textdomain' ), 
+        array("ReferenceLinkOrganizer","render_meta_box_for_tools"), 
+        ReferenceLinkOrganizer::get_plugin_base_name(), 
+        'side', 
+        'high' );
     }
-    public static function setup_post_type() {       
+      
+    public static function render_meta_box_for_tools( $post ) {
+      wp_nonce_field( basename( __FILE__ ), 'my_custom_meta_box_nonce' ); //used later for security
+      echo '<p><input type="checkbox" name="is_this_featured" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('Featured a Product?', 'textdomain').'</label></p>';
+
+      echo '<p><input type="text" name="tool_url" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('URL', 'textdomain').'</label></p>';
+
+      echo '<p>'. 
+        '<input type="radio" id="locatability_1" name="locatability" value="1" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
+        '<label for="locatability_1">'.__('Front Page of Google', 'textdomain').'</label><br/>'.
+        '<input type="radio" id="locatability_2" name="locatability" value="2" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
+        '<label for="locatability_1">'.__('Second Page of Google', 'textdomain').'</label><br/>'.
+        '<input type="radio" id="locatability_3" name="locatability" value="3" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
+        '<label for="locatability_1"><a target="_blank" href="https://xkcd.com/979/">'.__('Denver Coder 99s Home Address', 'textdomain').'</a></label>'.
+        '</p>';
+
+
+    }
+    public static function tools_save_meta_boxes_data( $post_id ){
+      // check for nonce to top xss
+      if ( !isset( $_POST['my_custom_meta_box_nonce'] ) || !wp_verify_nonce( $_POST['my_custom_meta_box_nonce'], basename( __FILE__ ) ) ){
+          return;
+      }
+  
+      // check for correct user capabilities - stop internal xss from customers
+      if ( ! current_user_can( 'edit_post', $post_id ) ){
+          return;
+      }
+  
+      // update fields
+      if ( isset( $_REQUEST['is_this_featured'] ) ) {
+          update_post_meta( $post_id, 'is_this_featured', sanitize_text_field( $_POST['is_this_featured'] ) );
+      }
+
+      if ( isset( $_REQUEST['tool_url'] ) ) {
+        update_post_meta( $post_id, 'tool_url', sanitize_text_field( $_POST['tool_url'] ) );
+      }
+
+      if ( isset( $_REQUEST['locatability'] ) ) {
+        update_post_meta( $post_id, 'locatability', sanitize_text_field( $_POST['locatability'] ) );
+
+      }
+
+    }
+
+    public static function get_post_type_args() {       
       // Set other options for Custom Post Type
        
-      $args = array(
+      return array(
           'label'               => __( self::get_plugin_base_name(), 'twentytwenty' ),
           'description'         => __( 'Reference Links', 'twentytwenty' ),
           'labels'              => self::get_ui_labels(),
@@ -125,11 +122,9 @@ if (!class_exists('ReferenceLinkOrganizer')) {
           'show_in_rest' => true,
    
       );
-       
-      // Registering your Custom Post Type
-      register_post_type( self::get_plugin_base_name(), $args );
+             
     }
-    public static function setup_taxonomies() {
+    public static function get_taxonomy_args() {
       // Add a taxonomy like tags
       $labels = array(
         'name'                       => 'Attributes',
@@ -150,7 +145,7 @@ if (!class_exists('ReferenceLinkOrganizer')) {
         'menu_name'                  => 'Attributes',
       );
 
-      $args = array(
+      return array(
         'hierarchical'          => false,
         'labels'                => $labels,
         'show_ui'               => true,
@@ -161,15 +156,14 @@ if (!class_exists('ReferenceLinkOrganizer')) {
         'rewrite'               => array( 'slug' => 'attribute' ),
       );
 
-      register_taxonomy('sm_project_attribute',self::get_plugin_base_name(),$args);
     }
-    public static function setup_templates() {
+
       // found this here: https://wordpress.stackexchange.com/a/17388
 
       /* Filter the single_template with our custom function*/
-      add_filter('single_template', 'my_custom_template');
+      
 
-      function my_custom_template($single) {
+    public static function my_custom_template($single) {
 
           global $post;
 
@@ -183,13 +177,14 @@ if (!class_exists('ReferenceLinkOrganizer')) {
           return $single;
 
       }
-    }
+  
 
     public static function init() {
-      ReferenceLinkOrganizer::setup_taxonomies();
-      ReferenceLinkOrganizer::setup_post_type();
-      ReferenceLinkOrganizer::setup_meta_boxes();
-      ReferenceLinkOrganizer::setup_templates();
+      register_taxonomy('sm_project_attribute',self::get_plugin_base_name(),self::get_taxonomy_args());
+      register_post_type( self::get_plugin_base_name(), self::get_post_type_args());
+      add_action( 'add_meta_boxes_'.self::get_plugin_base_name(), array("ReferenceLinkOrganizer","meta_box_for_tools"));
+      add_action( 'save_post_'.self::get_plugin_base_name(), array("ReferenceLinkOrganizer","tools_save_meta_boxes_data"), 10, 2 );
+      add_filter('single_template', array("ReferenceLinkOrganizer","my_custom_template"));
     }
 
     public static function activate() {
