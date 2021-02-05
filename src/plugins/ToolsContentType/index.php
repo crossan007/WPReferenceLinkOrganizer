@@ -1,6 +1,6 @@
 <?php
 /*
-  Plugin Name: Link Organizer
+  Plugin Name: Reference Link Organizer
   Plugin URI: http://github.com/crossan007/ToolsWPContentType
   Description: Provides a content type for cleanly storing links to various resources with searchable taxonomy and room for your own notes. Stop leaving 100's of tabs open, and save the link here instead
   Author: Charles Crossan
@@ -9,20 +9,42 @@
 */
 
 
-if (!class_exists('LinkOrganizer')) {
+if (!class_exists('ReferenceLinkOrganizer')) {
   // WordPress class-based model Resources: https://carlalexander.ca/static-keyword-wordpress/
   // https://developer.wordpress.org/plugins/plugin-basics/best-practices/#object-oriented-programming-method
 
-  class LinkOrganizer {
+  class ReferenceLinkOrganizer {
+
+    public static function get_plugin_base_name() {
+      return 'reference_link';
+    }
+
+    private static function get_ui_labels() {
+      return array(
+        'name'                => _x( 'Reference Links', 'Post Type General Name', 'twentytwenty' ),
+        'singular_name'       => _x( 'Reference Link', 'Post Type Singular Name', 'twentytwenty' ),
+        'menu_name'           => __( 'Reference Links', 'twentytwenty' ),
+        'all_items'           => __( 'All Reference Links', 'twentytwenty' ),
+        'view_item'           => __( 'View Reference Link', 'twentytwenty' ),
+        'add_new_item'        => __( 'Add New Reference Link', 'twentytwenty' ),
+        'add_new'             => __( 'Add New', 'twentytwenty' ),
+        'edit_item'           => __( 'Edit Reference Link', 'twentytwenty' ),
+        'update_item'         => __( 'Update Reference Link', 'twentytwenty' ),
+        'search_items'        => __( 'Search Reference Links', 'twentytwenty' ),
+        'not_found'           => __( 'Not Found', 'twentytwenty' ),
+        'not_found_in_trash'  => __( 'Not found in Trash', 'twentytwenty' ),
+      );
+    }
+
     public static function setup_meta_boxes(){
       // found this here: https://stackoverflow.com/a/61209067
-      add_action( 'add_meta_boxes_tools', 'meta_box_for_tools' );
+      add_action( 'add_meta_boxes_'.self::get_plugin_base_name(), 'meta_box_for_tools' );
       function meta_box_for_tools( $post ){
           add_meta_box(
             'my_meta_box_custom_id', 
             _( 'Additional info', 'textdomain' ), 
             'my_custom_meta_box_html_output', 
-            'tools', 
+            ReferenceLinkOrganizer::get_plugin_base_name(), 
             'side', 
             'high' );
       }
@@ -45,7 +67,7 @@ if (!class_exists('LinkOrganizer')) {
 
       }
       
-      add_action( 'save_post_tools', 'tools_save_meta_boxes_data', 10, 2 );
+      add_action( 'save_post_'.self::get_plugin_base_name(), 'tools_save_meta_boxes_data', 10, 2 );
       function tools_save_meta_boxes_data( $post_id ){
           // check for nonce to top xss
           if ( !isset( $_POST['my_custom_meta_box_nonce'] ) || !wp_verify_nonce( $_POST['my_custom_meta_box_nonce'], basename( __FILE__ ) ) ){
@@ -73,30 +95,13 @@ if (!class_exists('LinkOrganizer')) {
 
       }
     }
-    public static function setup_post_type() {
-        // Set UI labels for Custom Post Type
-        $labels = array(
-          'name'                => _x( 'Tools', 'Post Type General Name', 'twentytwenty' ),
-          'singular_name'       => _x( 'Tool', 'Post Type Singular Name', 'twentytwenty' ),
-          'menu_name'           => __( 'Tools', 'twentytwenty' ),
-          'parent_item_colon'   => __( 'Parent Tool', 'twentytwenty' ),
-          'all_items'           => __( 'All Tools', 'twentytwenty' ),
-          'view_item'           => __( 'View Tool', 'twentytwenty' ),
-          'add_new_item'        => __( 'Add New Tool', 'twentytwenty' ),
-          'add_new'             => __( 'Add New', 'twentytwenty' ),
-          'edit_item'           => __( 'Edit Tool', 'twentytwenty' ),
-          'update_item'         => __( 'Update Tool', 'twentytwenty' ),
-          'search_items'        => __( 'Search Tool', 'twentytwenty' ),
-          'not_found'           => __( 'Not Found', 'twentytwenty' ),
-          'not_found_in_trash'  => __( 'Not found in Trash', 'twentytwenty' ),
-      );
-       
+    public static function setup_post_type() {       
       // Set other options for Custom Post Type
        
       $args = array(
-          'label'               => __( 'tools', 'twentytwenty' ),
-          'description'         => __( 'Tool reviews', 'twentytwenty' ),
-          'labels'              => $labels,
+          'label'               => __( self::get_plugin_base_name(), 'twentytwenty' ),
+          'description'         => __( 'Reference Links', 'twentytwenty' ),
+          'labels'              => self::get_ui_labels(),
           // Features this CPT supports in Post Editor
           'supports'            => array( 'title', 'editor', 'author'),
           // You can associate this CPT with a taxonomy or custom taxonomy. 
@@ -122,7 +127,7 @@ if (!class_exists('LinkOrganizer')) {
       );
        
       // Registering your Custom Post Type
-      register_post_type( 'tools', $args );
+      register_post_type( self::get_plugin_base_name(), $args );
     }
     public static function setup_taxonomies() {
       // Add a taxonomy like tags
@@ -156,7 +161,7 @@ if (!class_exists('LinkOrganizer')) {
         'rewrite'               => array( 'slug' => 'attribute' ),
       );
 
-      register_taxonomy('sm_project_attribute','tools',$args);
+      register_taxonomy('sm_project_attribute',self::get_plugin_base_name(),$args);
     }
     public static function setup_templates() {
       // found this here: https://wordpress.stackexchange.com/a/17388
@@ -169,9 +174,9 @@ if (!class_exists('LinkOrganizer')) {
           global $post;
 
           /* Checks for single template by post type */
-          if ( $post->post_type == 'tools' ) {
-              if ( file_exists( plugin_dir_path( __FILE__ ) . '/single-tools.php' ) ) {
-                  return plugin_dir_path( __FILE__ ) . '/single-tools.php';
+          if ( $post->post_type == ReferenceLinkOrganizer::get_plugin_base_name() ) {
+              if ( file_exists( plugin_dir_path( __FILE__ ) . '/single-'.ReferenceLinkOrganizer::get_plugin_base_name().'.php' ) ) {
+                  return plugin_dir_path( __FILE__ ) . '/single-'.ReferenceLinkOrganizer::get_plugin_base_name().'.php';
               }
           }
 
@@ -181,30 +186,30 @@ if (!class_exists('LinkOrganizer')) {
     }
 
     public static function init() {
-      LinkOrganizer::setup_taxonomies();
-      LinkOrganizer::setup_post_type();
-      LinkOrganizer::setup_meta_boxes();
-      LinkOrganizer::setup_templates();
+      ReferenceLinkOrganizer::setup_taxonomies();
+      ReferenceLinkOrganizer::setup_post_type();
+      ReferenceLinkOrganizer::setup_meta_boxes();
+      ReferenceLinkOrganizer::setup_templates();
     }
 
     public static function activate() {
       // One of the most common uses for an activation hook is to refresh WordPress permalinks 
       // when a plugin registers a custom post type. This gets rid of the nasty 404 errors.
-      LinkOrganizer::setup_post_type();
+      ReferenceLinkOrganizer::setup_post_type();
       flush_rewrite_rules(); 
     }
 
     public static function deactivate() {
-      unregister_post_type( 'tools' );
+      unregister_post_type( self::get_plugin_base_name() );
       flush_rewrite_rules();
     }
   }
 
   
   
-  add_action( 'init', array('LinkOrganizer','init'), 0 );
-  register_activation_hook( __FILE__, array('LinkOrganizer','activate'));
-  register_deactivation_hook( __FILE__, array('LinkOrganizer','deactivate') );
+  add_action( 'init', array('ReferenceLinkOrganizer','init'), 0 );
+  register_activation_hook( __FILE__, array('ReferenceLinkOrganizer','activate'));
+  register_deactivation_hook( __FILE__, array('ReferenceLinkOrganizer','deactivate') );
 }
 
    
