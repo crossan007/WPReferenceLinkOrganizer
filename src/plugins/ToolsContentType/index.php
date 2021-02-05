@@ -9,49 +9,73 @@
 */
 
 
-/*
-* Creating a function to create our CPT
-*/
- 
-function custom_post_type() {
+if (!class_exists('CCrossan_ToolsWPContentType')) {
+  // WordPress class-based model Resources: https://carlalexander.ca/static-keyword-wordpress/
+  // https://developer.wordpress.org/plugins/plugin-basics/best-practices/#object-oriented-programming-method
 
-   // Add a taxonomy like tags
-   $labels = array(
-    'name'                       => 'Attributes',
-    'singular_name'              => 'Attribute',
-    'search_items'               => 'Attributes',
-    'popular_items'              => 'Popular Attributes',
-    'all_items'                  => 'All Attributes',
-    'parent_item'                => null,
-    'parent_item_colon'          => null,
-    'edit_item'                  => 'Edit Attribute',
-    'update_item'                => 'Update Attribute',
-    'add_new_item'               => 'Add New Attribute',
-    'new_item_name'              => 'New Attribute Name',
-    'separate_items_with_commas' => 'Separate Attributes with commas',
-    'add_or_remove_items'        => 'Add or remove Attributes',
-    'choose_from_most_used'      => 'Choose from most used Attributes',
-    'not_found'                  => 'No Attributes found',
-    'menu_name'                  => 'Attributes',
-  );
+  class CCrossan_ToolsWPContentType {
+    public static function setup_meta_boxes(){
+      // found this here: https://stackoverflow.com/a/61209067
+      add_action( 'add_meta_boxes_tools', 'meta_box_for_tools' );
+      function meta_box_for_tools( $post ){
+          add_meta_box(
+            'my_meta_box_custom_id', 
+            _( 'Additional info', 'textdomain' ), 
+            'my_custom_meta_box_html_output', 
+            'tools', 
+            'side', 
+            'high' );
+      }
+      
+      function my_custom_meta_box_html_output( $post ) {
+        wp_nonce_field( basename( __FILE__ ), 'my_custom_meta_box_nonce' ); //used later for security
+        echo '<p><input type="checkbox" name="is_this_featured" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('Featured a Product?', 'textdomain').'</label></p>';
 
-  $args = array(
-    'hierarchical'          => false,
-    'labels'                => $labels,
-    'show_ui'               => true,
-    'show_admin_column'     => true,
-    'show_in_rest'          => true,
-    'update_count_callback' => '_update_post_term_count',
-    'query_var'             => true,
-    'rewrite'               => array( 'slug' => 'attribute' ),
-  );
+        echo '<p><input type="text" name="tool_url" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('URL', 'textdomain').'</label></p>';
 
-  register_taxonomy('sm_project_attribute','tools',$args);
+        echo '<p>'. 
+          '<input type="radio" id="locatability_1" name="locatability" value="1" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
+          '<label for="locatability_1">'.__('Front Page of Google', 'textdomain').'</label><br/>'.
+          '<input type="radio" id="locatability_2" name="locatability" value="2" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
+          '<label for="locatability_1">'.__('Second Page of Google', 'textdomain').'</label><br/>'.
+          '<input type="radio" id="locatability_3" name="locatability" value="3" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
+          '<label for="locatability_1"><a target="_blank" href="https://xkcd.com/979/">'.__('Denver Coder 99s Home Address', 'textdomain').'</a></label>'.
+          '</p>';
 
+
+      }
+      
+      add_action( 'save_post_tools', 'tools_save_meta_boxes_data', 10, 2 );
+      function tools_save_meta_boxes_data( $post_id ){
+          // check for nonce to top xss
+          if ( !isset( $_POST['my_custom_meta_box_nonce'] ) || !wp_verify_nonce( $_POST['my_custom_meta_box_nonce'], basename( __FILE__ ) ) ){
+              return;
+          }
+      
+          // check for correct user capabilities - stop internal xss from customers
+          if ( ! current_user_can( 'edit_post', $post_id ) ){
+              return;
+          }
+      
+          // update fields
+          if ( isset( $_REQUEST['is_this_featured'] ) ) {
+              update_post_meta( $post_id, 'is_this_featured', sanitize_text_field( $_POST['is_this_featured'] ) );
+          }
+
+          if ( isset( $_REQUEST['tool_url'] ) ) {
+            update_post_meta( $post_id, 'tool_url', sanitize_text_field( $_POST['tool_url'] ) );
+          }
+
+          if ( isset( $_REQUEST['locatability'] ) ) {
+            update_post_meta( $post_id, 'locatability', sanitize_text_field( $_POST['locatability'] ) );
   
- 
-  // Set UI labels for Custom Post Type
-      $labels = array(
+          }
+
+      }
+    }
+    public static function setup_post_type() {
+        // Set UI labels for Custom Post Type
+        $labels = array(
           'name'                => _x( 'Tools', 'Post Type General Name', 'twentytwenty' ),
           'singular_name'       => _x( 'Tool', 'Post Type Singular Name', 'twentytwenty' ),
           'menu_name'           => __( 'Tools', 'twentytwenty' ),
@@ -67,7 +91,7 @@ function custom_post_type() {
           'not_found_in_trash'  => __( 'Not found in Trash', 'twentytwenty' ),
       );
        
-  // Set other options for Custom Post Type
+      // Set other options for Custom Post Type
        
       $args = array(
           'label'               => __( 'tools', 'twentytwenty' ),
@@ -99,90 +123,77 @@ function custom_post_type() {
        
       // Registering your Custom Post Type
       register_post_type( 'tools', $args );
-
-       
-
-
-    // found this here: https://stackoverflow.com/a/61209067
-    add_action( 'add_meta_boxes_tools', 'meta_box_for_tools' );
-    function meta_box_for_tools( $post ){
-        add_meta_box( 'my_meta_box_custom_id', __( 'Additional info', 'textdomain' ), 'my_custom_meta_box_html_output', 'tools', 'normal', 'core' );
     }
-    
-    function my_custom_meta_box_html_output( $post ) {
-      wp_nonce_field( basename( __FILE__ ), 'my_custom_meta_box_nonce' ); //used later for security
-      echo '<p><input type="checkbox" name="is_this_featured" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('Featured a Product?', 'textdomain').'</label></p>';
+    public static function setup_taxonomies() {
+      // Add a taxonomy like tags
+      $labels = array(
+        'name'                       => 'Attributes',
+        'singular_name'              => 'Attribute',
+        'search_items'               => 'Attributes',
+        'popular_items'              => 'Popular Attributes',
+        'all_items'                  => 'All Attributes',
+        'parent_item'                => null,
+        'parent_item_colon'          => null,
+        'edit_item'                  => 'Edit Attribute',
+        'update_item'                => 'Update Attribute',
+        'add_new_item'               => 'Add New Attribute',
+        'new_item_name'              => 'New Attribute Name',
+        'separate_items_with_commas' => 'Separate Attributes with commas',
+        'add_or_remove_items'        => 'Add or remove Attributes',
+        'choose_from_most_used'      => 'Choose from most used Attributes',
+        'not_found'                  => 'No Attributes found',
+        'menu_name'                  => 'Attributes',
+      );
 
-      echo '<p><input type="text" name="tool_url" value="" '.get_post_meta($post->ID, 'tools_title', true).'/><label for="is_this_featured">'.__('URL', 'textdomain').'</label></p>';
+      $args = array(
+        'hierarchical'          => false,
+        'labels'                => $labels,
+        'show_ui'               => true,
+        'show_admin_column'     => true,
+        'show_in_rest'          => true,
+        'update_count_callback' => '_update_post_term_count',
+        'query_var'             => true,
+        'rewrite'               => array( 'slug' => 'attribute' ),
+      );
 
-      echo '<p>'. 
-        '<input type="radio" id="locatability_1" name="locatability" value="1" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
-        '<label for="locatability_1">'.__('Front Page of Google', 'textdomain').'</label><br/>'.
-        '<input type="radio" id="locatability_2" name="locatability" value="2" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
-        '<label for="locatability_1">'.__('Second Page of Google', 'textdomain').'</label><br/>'.
-        '<input type="radio" id="locatability_3" name="locatability" value="3" '.get_post_meta($post->ID, 'tools_title', true).'/>'.
-        '<label for="locatability_1"><a target="_blank" href="https://xkcd.com/979/">'.__('Denver Coder 99s Home Address', 'textdomain').'</a></label>'.
-        '</p>';
-
-
+      register_taxonomy('sm_project_attribute','tools',$args);
     }
-    
-    add_action( 'save_post_tools', 'tools_save_meta_boxes_data', 10, 2 );
-    function tools_save_meta_boxes_data( $post_id ){
-        // check for nonce to top xss
-        if ( !isset( $_POST['my_custom_meta_box_nonce'] ) || !wp_verify_nonce( $_POST['my_custom_meta_box_nonce'], basename( __FILE__ ) ) ){
-            return;
-        }
-    
-        // check for correct user capabilities - stop internal xss from customers
-        if ( ! current_user_can( 'edit_post', $post_id ) ){
-            return;
-        }
-    
-        // update fields
-        if ( isset( $_REQUEST['is_this_featured'] ) ) {
-            update_post_meta( $post_id, 'is_this_featured', sanitize_text_field( $_POST['is_this_featured'] ) );
-        }
+    public static function setup_templates() {
+      // found this here: https://wordpress.stackexchange.com/a/17388
 
-        if ( isset( $_REQUEST['tool_url'] ) ) {
-          update_post_meta( $post_id, 'tool_url', sanitize_text_field( $_POST['tool_url'] ) );
-        }
+      /* Filter the single_template with our custom function*/
+      add_filter('single_template', 'my_custom_template');
 
-        if ( isset( $_REQUEST['locatability'] ) ) {
-          update_post_meta( $post_id, 'locatability', sanitize_text_field( $_POST['locatability'] ) );
- 
-        }
+      function my_custom_template($single) {
 
-    }
+          global $post;
 
-    // found this here: https://wordpress.stackexchange.com/a/17388
+          /* Checks for single template by post type */
+          if ( $post->post_type == 'tools' ) {
+              if ( file_exists( plugin_dir_path( __FILE__ ) . '/single-tools.php' ) ) {
+                  return plugin_dir_path( __FILE__ ) . '/single-tools.php';
+              }
+          }
 
-    /* Filter the single_template with our custom function*/
-    add_filter('single_template', 'my_custom_template');
+          return $single;
 
-    function my_custom_template($single) {
-
-        global $post;
-
-        /* Checks for single template by post type */
-        if ( $post->post_type == 'tools' ) {
-            if ( file_exists( plugin_dir_path( __FILE__ ) . '/single-tools.php' ) ) {
-                return plugin_dir_path( __FILE__ ) . '/single-tools.php';
-            }
-        }
-
-        return $single;
-
+      }
     }
 
-   
+    public static function init() {
+      CCrossan_ToolsWPContentType::setup_taxonomies();
+      CCrossan_ToolsWPContentType::setup_post_type();
+      CCrossan_ToolsWPContentType::setup_meta_boxes();
+      CCrossan_ToolsWPContentType::setup_templates();
+    }
   }
+
+  
+  
+  add_action( 'init', array('CCrossan_ToolsWPContentType','init'), 0 );
+}
+
    
-  /* Hook into the 'init' action so that the function
-  * Containing our post type registration is not 
-  * unnecessarily executed. 
-  */
-   
-  add_action( 'init', 'custom_post_type', 0 );
+  
 
 
