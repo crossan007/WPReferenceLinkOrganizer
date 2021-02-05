@@ -1,7 +1,7 @@
 <?php
 /*
   Plugin Name: Reference Link Organizer
-  Plugin URI: http://github.com/crossan007/ToolsWPContentType
+  Plugin URI: http://github.com/crossan007/WPReferenceLinkOrganizer
   Description: Provides a content type for cleanly storing links to various resources with searchable taxonomy and room for your own notes. Stop leaving 100's of tabs open, and save the link here instead
   Author: Charles Crossan
   Version: 0.0.1
